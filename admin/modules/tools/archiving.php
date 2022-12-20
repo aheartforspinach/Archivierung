@@ -1,16 +1,20 @@
 <?php
-if (!defined("IN_MYBB")) die("Direct initialization of this file is not allowed.<br /><br />Please make sure IN_MYBB is defined.");
+if (!defined("IN_MYBB"))
+{
+    die("Direct initialization of this file is not allowed.<br /><br />Please make sure IN_MYBB is defined.");
+}
 
 $page->add_breadcrumb_item('Archivierung', 'index.php?module=tools-archiving');
 $page->output_header('Archivierung Administration');
 
-if ($_POST['archiving_update'] == 'Update') {
+if ($mybb->request_method == "post" && isset($mybb->input['archiving_update']))
+{
     verify_post_check($mybb->get_input('my_post_key'));
-    
+
     // delete old settings
     $db->delete_query('settings', "name IN('archiving_type')");
     $db->delete_query('settinggroups', "name = 'archiving'");
-    
+
     // create template group
     $templategroup = array(
         'prefix' => 'archiving',
@@ -25,6 +29,15 @@ if ($_POST['archiving_update'] == 'Update') {
     $db->update_query('templates', array('title' => 'archiving_submitSite', 'sid' => -2), 'title = "archivingSubmitSite"');
 
     flash_message('Das Update wurde erfolgreich durchgeführt!', 'success');
+    admin_redirect("index.php?module=tools-archiving");
+}
+
+
+$uptodate = false;
+$query = $db->simple_select('templates', 'title', 'title = "archivingButton"');
+if ($db->num_rows($query) == 0)
+{
+    $uptodate = true;
 }
 
 // format Table
@@ -33,9 +46,12 @@ $form_container = new FormContainer('Plugin aktualisieren');
 $form_container->output_row_header('Plugin');
 $form_container->output_row_header('Update');
 $form_container->output_cell('Archivierung Plugin');
-if ($db->num_rows($db->simple_select('templates', 'title', 'title = "archivingButton"')) == 0) { //update durchgeführt
+if ($uptodate)
+{
     $form_container->output_cell('Du bist bereits auf den aktuellen Stand');
-} else {
+}
+else
+{
     $form_container->output_cell($form->generate_submit_button('Update', array('name' => 'archiving_update')));
 }
 $form_container->construct_row();
